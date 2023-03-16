@@ -1,0 +1,32 @@
+- name: Install and configure FTP server
+  hosts: ftp-servers
+  become: true
+  vars:
+    ftp_user: ftpuser
+    ftp_password: ftppassword
+    ftp_path: /srv/ftp
+  tasks:
+    - name: Install vsftpd
+      apt:
+        name: vsftpd
+        state: present
+
+    - name: Create FTP directory
+      file:
+        path: "{{ ftp_path }}"
+        state: directory
+        owner: "{{ ftp_user }}"
+        group: "{{ ftp_user }}"
+        mode: 0775
+
+    - name: Configure vsftpd.conf
+      template:
+        src: vsftpd.conf.j2
+        dest: /etc/vsftpd.conf
+      notify:
+        - restart vsftpd
+
+    - name: Create FTP user
+      shell: |
+        echo "{{ ftp_password }}" | sudo -S useradd -d {{ ftp_path }}/{{ ftp_user }} -s /bin/false {{ ftp_user }}
+        echo "{{ ftp_password }}" | sudo -S chown -R {{ ftp_user }}:{{ ftp_user }} {{
